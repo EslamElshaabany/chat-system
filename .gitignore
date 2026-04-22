@@ -1,0 +1,41 @@
+# Java / Gradle
+.gradle/
+build/
+out/
+*.class
+*.jar
+*.war
+*.ear
+!gradle/wrapper/gradle-wrapper.jar
+
+# Go
+bin/
+*.exe
+*.test
+*.out
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# Docs
+.docs/
+
+# Docker
+infra/mysql/data/
+infra/elasticsearch/data/
+infra/redis/data/

@@ -1,0 +1,480 @@
+openapi: 3.0.3
+info:
+  title: Chat System API
+  version: 1.0.0
+  description: |
+    Contract-first API for a distributed chat system with async persistence,
+    Redis-based counters, and Elasticsearch search.
+
+servers:
+  - url: http://localhost:3000
+
+paths:
+  /applications:
+    post:
+      tags: [Applications]
+      summary: Create application
+      operationId: createApplication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApplicationRequest"
+      responses:
+        "201":
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "400":
+          description: Invalid input supplied
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{token}:
+    get:
+      tags: [Applications]
+      summary: Get application
+      operationId: getApplicationByToken
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        "200":
+          description: Application data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "404":
+          description: Application not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    put:
+      tags: [Applications]
+      summary: Update application
+      operationId: updateApplication
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateApplicationRequest"
+      responses:
+        "200":
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationResponse"
+        "400":
+          description: Invalid input supplied
+        "404":
+          description: Application not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{token}/chats:
+    post:
+      tags: [ChatsCreation]
+      summary: Create chat (async persistence)
+      operationId: createChat
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        "201":
+          description: Chat created (number generated immediately)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateChatResponse"
+        "400":
+          description: Invalid input supplied
+        "404":
+          description: Application not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags: [Chats]
+      summary: List chats
+      operationId: listChats
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      responses:
+        "200":
+          description: Chats list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatListResponse"
+        "404":
+          description: Application not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{token}/chats/{chatNumber}/messages:
+    post:
+      tags: [MessagesCreation]
+      summary: Create message (async persistence)
+      operationId: createMessage
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - in: path
+          name: chatNumber
+          required: true
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageRequest"
+      responses:
+        "201":
+          description: Message created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateMessageResponse"
+        "400":
+          description: Invalid input supplied
+        "404":
+          description: Application or Chat not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    get:
+      tags: [Messages]
+      summary: List messages
+      operationId: listMessages
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - in: path
+          name: chatNumber
+          required: true
+          schema:
+            type: integer
+            example: 1
+      responses:
+        "200":
+          description: Messages list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageListResponse"
+        "404":
+          description: Application or Chat not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{token}/chats/{chatNumber}/messages/search:
+    get:
+      tags: [Messages]
+      summary: Search messages (Elasticsearch)
+      operationId: searchMessages
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - in: path
+          name: chatNumber
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+            example: "hello"
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageListResponse"
+        "400":
+          description: Invalid search query
+        "404":
+          description: Application or Chat not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{token}/chats/{chatNumber}/messages/{messageNumber}:
+    put:
+      tags: [Messages]
+      summary: Update message
+      operationId: updateMessage
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - in: path
+          name: chatNumber
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - in: path
+          name: messageNumber
+          required: true
+          schema:
+            type: integer
+            example: 5
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMessageRequest"
+      responses:
+        "200":
+          description: Updated message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid input supplied
+        "404":
+          description: Message not found
+        default:
+          description: Unexpected error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    # -------------------------
+    # Request Models
+    # -------------------------
+
+    CreateApplicationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 25
+          example: "Main Customer Support"
+
+    UpdateApplicationRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 25
+          example: "Secondary Support"
+
+    CreateMessageRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          example: "Hello, I need help with my order."
+
+    UpdateMessageRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          example: "Hello, I need help with my shipment."
+
+    # -------------------------
+    # Base Entity Models
+    # -------------------------
+
+    Application:
+      type: object
+      properties:
+        token:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        name:
+          type: string
+          example: "Main Customer Support"
+        chats_count:
+          type: integer
+          example: 12
+
+    Chat:
+      type: object
+      properties:
+        number:
+          type: integer
+          example: 1
+        messages_count:
+          type: integer
+          example: 45
+
+    Message:
+      type: object
+      properties:
+        number:
+          type: integer
+          example: 5
+        body:
+          type: string
+          example: "Hello, I need help with my order."
+        created_at:
+          type: string
+          format: date-time
+          example: "2023-10-27T10:00:00Z"
+
+    # -------------------------
+    # Response Models & Envelopes
+    # -------------------------
+
+    ApplicationResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Application"
+
+    ChatListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Chat"
+
+    MessageResponse:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/Message"
+
+    MessageListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+
+    CreateChatResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            number:
+              type: integer
+              example: 1
+
+    CreateMessageResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            number:
+              type: integer
+              example: 5
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          example: "NOT_FOUND"
+        message:
+          type: string
+          example: "The requested resource was not found."
