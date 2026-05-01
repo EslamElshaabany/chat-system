@@ -1,4 +1,11 @@
-FROM ubuntu:latest
-LABEL authors="eslam"
+FROM golang:1.22-alpine AS build
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go build -o chat-ingestion-service ./cmd/api
 
-ENTRYPOINT ["top", "-b"]
+FROM alpine:3.19
+WORKDIR /app
+COPY --from=build /app/chat-ingestion-service .
+ENTRYPOINT ["./chat-ingestion-service"]
