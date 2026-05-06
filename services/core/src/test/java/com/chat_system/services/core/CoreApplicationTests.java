@@ -1,10 +1,10 @@
-package com.insta.chat;
+package com.chat_system.services.core;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ChatApplicationTests {
+class CoreApplicationTests {
 
 	@Test
 	void contextLoads() {
