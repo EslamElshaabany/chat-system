@@ -73,8 +73,6 @@ services:
     # deploy:
     #   replicas: 3
     healthcheck:
-      # /readyz checks dependencies (Redis, MySQL) — right choice for Docker health
-      # /healthz is liveness only (process alive) — used by Kubernetes liveness probe
       test: [ "CMD-SHELL", "wget -qO- http://localhost:8081/readyz || exit 1" ]
       interval: 10s
       timeout: 5s
@@ -100,10 +98,8 @@ services:
       elasticsearch:
         condition: service_healthy
     # deploy:
-    #   replicas: 3
+    #   replicas: 2
     healthcheck:
-      # Spring Boot Actuator — add spring-boot-starter-actuator to build.gradle
-      # returns 200 when app + all dependencies are UP
       test:
         [
           "CMD-SHELL",
