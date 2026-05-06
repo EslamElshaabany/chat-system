@@ -14,7 +14,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./infra/mysql/init.sql:/docker-entrypoint-initdb.d/schema.sql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,17 +23,14 @@ services:
     image: redis:7.2.13-alpine
     container_name: chat_redis
     command: >
-      redis-server
-      --appendonly yes
-      --appendfsync everysec
-      --maxmemory 256mb
+      redis-server --appendonly yes --appendfsync everysec --maxmemory 256mb
       --maxmemory-policy noeviction
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -50,14 +47,19 @@ services:
     volumes:
       - es_data:/usr/share/elasticsearch/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health | grep -v '\"status\":\"red\"'"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -sf http://localhost:9200/_cluster/health | grep -v
+            '\"status\":\"red\"'",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
 
-  chat-ingestion-service:
+  ingestion-service:
     build:
-      context: ./chat-ingestion-service
+      context: ./services/ingestion
       dockerfile: Dockerfile
     environment:
       REDIS_URL: redis:6379
@@ -68,17 +70,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    deploy:
-      replicas: 3
+    # deploy:
+    #   replicas: 3
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/health || exit 1"]
+      # /readyz checks dependencies (Redis, MySQL) — right choice for Docker health
+      # /healthz is liveness only (process alive) — used by Kubernetes liveness probe
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8081/readyz || exit 1" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  chat-core-service:
+  core-service:
     build:
-      context: ./chat-core-service
+      context: ./services/core
       dockerfile: Dockerfile
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/chat_system?useSSL=false&allowPublicKeyRetrieval=true
@@ -95,8 +99,19 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
-    deploy:
-      replicas: 3
+    # deploy:
+    #   replicas: 3
+    healthcheck:
+      # Spring Boot Actuator — add spring-boot-starter-actuator to build.gradle
+      # returns 200 when app + all dependencies are UP
+      test:
+        [
+          "CMD-SHELL",
+          "wget -qO- http://localhost:8080/actuator/health/readiness || exit 1",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 5
 
   nginx:
     image: nginx:1.27-alpine
@@ -106,8 +121,10 @@ services:
     volumes:
       - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - chat-ingestion-service
-      - chat-core-service
+      ingestion-service:
+        condition: service_healthy
+      core-service:
+        condition: service_healthy
 
 volumes:
   mysql_data:
