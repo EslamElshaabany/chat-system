@@ -66,7 +66,7 @@ services:
       dockerfile: Dockerfile
     environment:
       REDIS_URL: redis:6379
-      MYSQL_URL: chat_user:chat_pass@tcp(mysql:3306)/chat_system?parseTime=true
+      # MYSQL_URL: chat_user:chat_pass@tcp(mysql:3306)/chat_system?parseTime=true
       PORT: 8081
     depends_on:
       # mysql:
