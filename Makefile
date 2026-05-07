@@ -35,7 +35,8 @@ dev: infra
 	@echo "🚀 Starting services..."
 	@trap 'kill 0' SIGINT; \
 	(cd services/core && . ./.env && ./gradlew bootRun) & \
-	(cd services/ingestion && . ./.env && go run ./cmd/api/main.go) & \
+	(cd services/core && . ./.env && ./gradlew -t compileJava) & \
+	(cd services/ingestion && . ./.env && air) & \
 	wait
 
 # ── Help ─────────────────────────────────────────────────────────────
