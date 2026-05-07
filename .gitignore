@@ -32,9 +32,6 @@ vendor/
 *.log
 logs/
 
-# Docs
-.docs/
-
 # Docker
 infra/mysql/data/
 infra/elasticsearch/data/
