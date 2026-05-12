@@ -1,4 +1,4 @@
-gitpackage com.chat_system.services.core.api.dto;
+package com.chat_system.services.core.api.dto;
 
 
 import com.chat_system.services.core.domain.model.Application;
