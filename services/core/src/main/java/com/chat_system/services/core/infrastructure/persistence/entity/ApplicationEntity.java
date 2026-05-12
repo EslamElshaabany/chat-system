@@ -1,14 +1,16 @@
 package com.chat_system.services.core.infrastructure.persistence.entity;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "applications")
 @Getter
-@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
