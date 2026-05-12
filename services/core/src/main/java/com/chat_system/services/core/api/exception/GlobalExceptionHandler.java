@@ -2,7 +2,9 @@ package com.chat_system.services.core.api.exception;
 
 import com.chat_system.services.core.api.dto.ApiResponse;
 import com.chat_system.services.core.api.dto.ErrorResponse;
+import com.chat_system.services.core.api.dto.FieldError;
 import com.chat_system.services.core.domain.exception.DomainException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,8 +16,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-import java.util.Map;
+import java.util.Objects;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -31,8 +34,8 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException.class
     })
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiResponse<?> handleBadRequest(Exception ex) {
-        return fail(ex.getMessage());
+    public ApiResponse<?> handleBadRequest() {
+        return fail(ErrorMessages.MALFORMED_REQUEST);
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
@@ -45,21 +48,22 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.UNPROCESSABLE_CONTENT)
     public ApiResponse<?> handleValidation(MethodArgumentNotValidException ex) {
         var errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> {
-                    assert e.getDefaultMessage() != null;
-                    return Map.of("field", e.getField(), "message", e.getDefaultMessage());
-                })
+                .map(e -> new FieldError(
+                        e.getField(),
+                        Objects.requireNonNullElse(e.getDefaultMessage(), "invalid")
+                ))
                 .toList();
-        return ApiResponse.failure(new ErrorResponse(ErrorMessages.INVALID_INPUT, errors));
+        return ApiResponse.failure(new ErrorResponse<>(ErrorMessages.INVALID_INPUT, errors));
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ApiResponse<?> handleUnexpected() {
+    public ApiResponse<?> handleUnexpected(Exception ex) {
+        log.error("Unhandled exception", ex);
         return fail(ErrorMessages.SOMETHING_WENT_WRONG);
     }
 
     private ApiResponse<?> fail(String message) {
-        return ApiResponse.failure(new ErrorResponse(message, null));
+        return ApiResponse.failure(new ErrorResponse<>(message, null));
     }
 }
