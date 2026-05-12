@@ -19,7 +19,7 @@ public class ApplicationsController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    ApplicationResponse create(@Valid @RequestBody CreateApplicationRequest req) {
+    public ApplicationResponse create(@Valid @RequestBody CreateApplicationRequest req) {
         var app = createApplicationUseCase.execute(req.name());
         return ApplicationResponse.from(app);
     }
