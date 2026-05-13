@@ -2,9 +2,6 @@ openapi: 3.0.3
 info:
   title: Chat System API
   version: 1.0.0
-  description: |
-    Contract-first API for a distributed chat system with async persistence,
-    Redis-based counters, and Elasticsearch search.
 
 servers:
   - url: http://localhost:3000
@@ -29,13 +26,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApplicationResponse"
         "400":
-          description: Invalid input supplied
-        default:
+          description: Malformed or unreadable request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
+        "422":
+          description: Validation or domain error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/FieldValidationErrorResponse"
+                  - $ref: "#/components/schemas/DomainErrorResponse"
+              examples:
+                field_validation:
+                  summary: Field-level validation failure
+                  value:
+                    error:
+                      message: "Invalid input"
+                      errors:
+                        - field: "name"
+                          message: "size must be between 3 and 25"
+                domain_error:
+                  summary: Domain rule violation
+                  value:
+                    error:
+                      message: "Application name must not be blank"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
   /applications/{token}:
     get:
@@ -57,14 +80,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApplicationResponse"
+        "400":
+          description: Malformed or unreadable request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
         "404":
           description: Application not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
     put:
       tags: [Applications]
@@ -92,20 +125,50 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApplicationResponse"
         "400":
-          description: Invalid input supplied
+          description: Malformed or unreadable request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
         "404":
           description: Application not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "422":
+          description: Validation or domain error
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/FieldValidationErrorResponse"
+                  - $ref: "#/components/schemas/DomainErrorResponse"
+              examples:
+                field_validation:
+                  summary: Field-level validation failure
+                  value:
+                    error:
+                      message: "Invalid input"
+                      errors:
+                        - field: "name"
+                          message: "size must be between 3 and 25"
+                domain_error:
+                  summary: Domain rule violation
+                  value:
+                    error:
+                      message: "Application name must not exceed 25 characters"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
   /applications/{token}/chats:
     post:
-      tags: [ChatsCreation]
-      summary: Create chat (async persistence)
+      tags: [Chats]
+      summary: Create chat
       operationId: createChat
       parameters:
         - in: path
@@ -117,21 +180,29 @@ paths:
             example: "550e8400-e29b-41d4-a716-446655440000"
       responses:
         "201":
-          description: Chat created (number generated immediately)
+          description: Chat created
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/CreateChatResponse"
         "400":
-          description: Invalid input supplied
+          description: Malformed or unreadable request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
         "404":
           description: Application not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
     get:
       tags: [Chats]
@@ -154,17 +225,21 @@ paths:
                 $ref: "#/components/schemas/ChatListResponse"
         "404":
           description: Application not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
   /applications/{token}/chats/{chatNumber}/messages:
     post:
-      tags: [MessagesCreation]
-      summary: Create message (async persistence)
+      tags: [Messages]
+      summary: Create message
       operationId: createMessage
       parameters:
         - in: path
@@ -194,15 +269,35 @@ paths:
               schema:
                 $ref: "#/components/schemas/CreateMessageResponse"
         "400":
-          description: Invalid input supplied
+          description: Malformed or unreadable request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
         "404":
           description: Application or Chat not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldValidationErrorResponse"
+              example:
+                error:
+                  message: "Invalid input"
+                  errors:
+                    - field: "body"
+                      message: "must not be blank"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
     get:
       tags: [Messages]
@@ -231,17 +326,21 @@ paths:
                 $ref: "#/components/schemas/MessageListResponse"
         "404":
           description: Application or Chat not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
   /applications/{token}/chats/{chatNumber}/messages/search:
     get:
       tags: [Messages]
-      summary: Search messages (Elasticsearch)
+      summary: Search messages
       operationId: searchMessages
       parameters:
         - in: path
@@ -271,15 +370,23 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageListResponse"
         "400":
-          description: Invalid search query
+          description: Missing or malformed query parameter
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
         "404":
           description: Application or Chat not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
   /applications/{token}/chats/{chatNumber}/messages/{messageNumber}:
     put:
@@ -320,21 +427,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/MessageResponse"
         "400":
-          description: Invalid input supplied
+          description: Malformed or unreadable request body
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestErrorResponse"
         "404":
           description: Message not found
-        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFoundErrorResponse"
+        "422":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FieldValidationErrorResponse"
+              example:
+                error:
+                  message: "Invalid input"
+                  errors:
+                    - field: "body"
+                      message: "must not be blank"
+        "500":
           description: Unexpected error
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                $ref: "#/components/schemas/InternalErrorResponse"
 
 components:
   schemas:
-    # -------------------------
     # Request Models
-    # -------------------------
 
     CreateApplicationRequest:
       type: object
@@ -372,9 +497,7 @@ components:
           type: string
           example: "Hello, I need help with my shipment."
 
-    # -------------------------
-    # Base Entity Models
-    # -------------------------
+    # Entity Models
 
     Application:
       type: object
@@ -414,9 +537,7 @@ components:
           format: date-time
           example: "2023-10-27T10:00:00Z"
 
-    # -------------------------
-    # Response Models & Envelopes
-    # -------------------------
+    # Success Response Envelopes
 
     ApplicationResponse:
       type: object
@@ -466,15 +587,101 @@ components:
               type: integer
               example: 5
 
-    ErrorResponse:
+    # Error Response Schemas
+
+    BadRequestErrorResponse:
       type: object
-      required:
-        - error
-        - message
+      required: [error]
       properties:
         error:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              enum: ["Malformed request body"]
+      example:
+        error:
+          message: "Malformed request body"
+
+    NotFoundErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              enum: ["Resource not found"]
+      example:
+        error:
+          message: "Resource not found"
+
+    FieldValidationErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message, errors]
+          properties:
+            message:
+              type: string
+              enum: ["Invalid input"]
+            errors:
+              type: array
+              minItems: 1
+              items:
+                $ref: "#/components/schemas/FieldError"
+      example:
+        error:
+          message: "Invalid input"
+          errors:
+            - field: "name"
+              message: "size must be between 3 and 25"
+
+    DomainErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              enum:
+                - "Application name must not be blank"
+                - "Application name must be at least 3 characters"
+                - "Application name must not exceed 25 characters"
+      example:
+        error:
+          message: "Application name must not be blank"
+
+    InternalErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+              enum: ["Something went wrong"]
+      example:
+        error:
+          message: "Something went wrong"
+
+    FieldError:
+      type: object
+      required: [field, message]
+      properties:
+        field:
           type: string
-          example: "NOT_FOUND"
+          example: "name"
         message:
           type: string
-          example: "The requested resource was not found."
+          example: "size must be between 3 and 25"
