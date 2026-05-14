@@ -5,6 +5,7 @@ import com.chat_system.services.core.domain.exception.DomainException;
 import com.chat_system.services.core.domain.exception.InvalidApplicationException;
 import com.chat_system.services.core.domain.model.Application;
 import com.chat_system.services.core.usecase.CreateApplicationUseCase;
+import com.chat_system.services.core.usecase.GetApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ public class ApplicationsControllerTest {
 
     @MockitoBean
     CreateApplicationUseCase createApplicationUseCase;
+
+    @MockitoBean
+    GetApplicationUseCase getApplicationUseCase;
 
     @BeforeEach
     void setUp() {
@@ -83,12 +87,13 @@ public class ApplicationsControllerTest {
     @Test
     void createApplication_unmappedDomainException_returns500() throws Exception {
         when(createApplicationUseCase.execute("MyApp"))
-                .thenThrow(new DomainException("some unmapped domain error") {});
+                .thenThrow(new DomainException("some unmapped domain error") {
+                });
 
         mockMvc.perform(post("/applications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"MyApp\"}"))
-                .andExpect(status().isInternalServerError())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.error.message").isNotEmpty())
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
