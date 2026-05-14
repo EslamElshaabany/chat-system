@@ -3,11 +3,10 @@ package com.chat_system.services.core.domain.model;
 import com.chat_system.services.core.domain.exception.InvalidApplicationException;
 
 import java.time.Instant;
-import java.util.UUID;
 
 public record Application(
         Long id,
-        UUID token,
+        ApplicationToken token,
         String name,
         int chatsCount,
         Instant createdAt,
@@ -25,7 +24,7 @@ public record Application(
 
         return new Application(
                 null,
-                UUID.randomUUID(),
+                ApplicationToken.generate(),
                 name,
                 0,
                 Instant.now(),

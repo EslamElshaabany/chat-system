@@ -41,7 +41,7 @@ class ApplicationRepositoryAdapterTest {
 
         var entity = jpaRepository.findById(saved.id()).orElseThrow();
         assertThat(entity.getName()).isEqualTo("MyApp");
-        assertThat(entity.getToken()).isEqualTo(app.token().toString());
+        assertThat(entity.getToken()).isEqualTo(app.token().string());
         assertThat(entity.getChatsCount()).isZero();
     }
 

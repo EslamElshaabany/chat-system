@@ -10,7 +10,7 @@ public record ApplicationResponse(
 ) {
     public static ApplicationResponse from(Application app) {
         return new ApplicationResponse(
-                app.token().toString(),
+                app.token().string(),
                 app.name(),
                 app.chatsCount()
         );
