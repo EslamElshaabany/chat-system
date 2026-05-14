@@ -1,6 +1,7 @@
 package com.chat_system.services.core.infrastructure.persistence.adapter;
 
 import com.chat_system.services.core.domain.model.Application;
+import com.chat_system.services.core.domain.model.ApplicationToken;
 import com.chat_system.services.core.infrastructure.persistence.repository.ApplicationJpaRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,5 +53,25 @@ class ApplicationRepositoryAdapterTest {
         var saved = adapter.save(app);
 
         assertThat(saved.token()).isEqualTo(app.token());
+    }
+
+    @Test
+    void findBy_existingToken_returnsApplication() {
+        var app = Application.create("MyApp");
+        var saved = adapter.save(app);
+
+        var result = adapter.findBy(saved.token());
+
+        assertThat(result).isPresent();
+        assertThat(result.get().id()).isEqualTo(saved.id());
+        assertThat(result.get().name()).isEqualTo("MyApp");
+        assertThat(result.get().token()).isEqualTo(saved.token());
+    }
+
+    @Test
+    void findBy_nonExistingToken_returnsEmpty() {
+        var result = adapter.findBy(ApplicationToken.generate());
+
+        assertThat(result).isEmpty();
     }
 }

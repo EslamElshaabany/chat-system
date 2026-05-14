@@ -13,13 +13,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-public class GetApplicationUseCaseTest {
+class GetApplicationUseCaseTest {
 
     @Mock
     ApplicationRepository applicationRepository;
@@ -32,48 +32,32 @@ public class GetApplicationUseCaseTest {
     }
 
     @Test
-    void execute_valid_token_return_valid_application() {
+    void execute_existingToken_returnsApplication() {
         var app = Application.create("MyApp");
-        var token = app.token();
+        when(applicationRepository.findBy(any())).thenReturn(Optional.of(app));
 
-        when(applicationRepository.findBy(any()))
-                .thenReturn(Optional.of(app));
-
-        var result = useCase.execute(token);
+        var result = useCase.execute(app.token());
 
         assertThat(result).isEqualTo(app);
-
     }
 
     @Test
-    void execute_valid_token_pass_application_token_to_repository() {
-
+    void execute_passesTokenToRepository() {
         var app = Application.create("MyApp");
         var token = app.token();
-
         var captor = ArgumentCaptor.forClass(ApplicationToken.class);
-        when(applicationRepository.findBy(captor.capture()))
-                .thenReturn(Optional.of(app));
+        when(applicationRepository.findBy(captor.capture())).thenReturn(Optional.of(app));
 
         useCase.execute(token);
 
-        var captured = captor.getValue();
-        assertThat(captured.value()).isEqualTo(token.value());
-        assertThat(captured.string()).isEqualTo(token.string());
-        assertThat(captured).isNotNull();
+        assertThat(captor.getValue()).isEqualTo(token);
     }
 
     @Test
-    void execute_token_for_not_existing_app_will_return_not_found() {
-        var token = ApplicationToken.generate();
+    void execute_nonExistingToken_throwsApplicationNotFoundException() {
+        when(applicationRepository.findBy(any())).thenReturn(Optional.empty());
 
-        when(applicationRepository.findBy(any()))
-                .thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> useCase.execute(token))
+        assertThatThrownBy(() -> useCase.execute(ApplicationToken.generate()))
                 .isInstanceOf(ApplicationNotFoundException.class);
-
     }
-
-
 }
