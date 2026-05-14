@@ -31,4 +31,22 @@ public record Application(
                 Instant.now()
         );
     }
+
+    public Application update(String name) {
+        if (name == null || name.isBlank())
+            throw new InvalidApplicationException(InvalidApplicationException.NAME_BLANK);
+        if (name.strip().length() < 3)
+            throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_SHORT);
+        if (name.strip().length() > 25)
+            throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_LONG);
+
+        return new Application(
+                this.id,
+                this.token,
+                name.strip(),
+                this.chatsCount,
+                this.createdAt,
+                Instant.now()
+        );
+    }
 }
