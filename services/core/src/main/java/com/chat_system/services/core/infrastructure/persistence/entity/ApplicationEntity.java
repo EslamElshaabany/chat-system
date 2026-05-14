@@ -26,13 +26,13 @@ public class ApplicationEntity {
     @Column(nullable = false)
     String name;
 
-    @Column(name = "chats_count")
+    @Column(name = "chats_count", nullable = false)
     int chatsCount;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     Instant createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     Instant updatedAt;
 
 }

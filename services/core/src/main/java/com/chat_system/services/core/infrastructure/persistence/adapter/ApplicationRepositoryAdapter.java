@@ -2,11 +2,12 @@ package com.chat_system.services.core.infrastructure.persistence.adapter;
 
 import com.chat_system.services.core.domain.interfaces.repository.ApplicationRepository;
 import com.chat_system.services.core.domain.model.Application;
+import com.chat_system.services.core.domain.model.ApplicationToken;
 import com.chat_system.services.core.infrastructure.persistence.entity.ApplicationEntity;
 import com.chat_system.services.core.infrastructure.persistence.repository.ApplicationJpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public class ApplicationRepositoryAdapter implements ApplicationRepository {
@@ -23,10 +24,17 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
         return toDomain(saved);
     }
 
+    @Override
+    public Optional<Application> findBy(ApplicationToken token) {
+        return applicationJpa
+                .findByToken(token.string())
+                .map(this::toDomain);
+    }
+
     private ApplicationEntity toEntity(Application app) {
         return ApplicationEntity.builder()
                 .id(app.id())
-                .token(app.token().toString())
+                .token(app.token().string())
                 .name(app.name())
                 .chatsCount(app.chatsCount())
                 .createdAt(app.createdAt())
@@ -37,7 +45,7 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
     private Application toDomain(ApplicationEntity e) {
         return new Application(
                 e.getId(),
-                UUID.fromString(e.getToken()),
+                ApplicationToken.from(e.getToken()),
                 e.getName(),
                 e.getChatsCount(),
                 e.getCreatedAt(),
