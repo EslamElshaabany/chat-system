@@ -7,7 +7,7 @@ import com.chat_system.services.core.infrastructure.persistence.entity.Applicati
 import com.chat_system.services.core.infrastructure.persistence.repository.ApplicationJpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.UUID;
+import java.util.Optional;
 
 @Repository
 public class ApplicationRepositoryAdapter implements ApplicationRepository {
@@ -22,6 +22,13 @@ public class ApplicationRepositoryAdapter implements ApplicationRepository {
         var entity = toEntity(app);
         var saved = applicationJpa.save(entity);
         return toDomain(saved);
+    }
+
+    @Override
+    public Optional<Application> findBy(ApplicationToken token) {
+        return applicationJpa
+                .findByToken(token.string())
+                .map(this::toDomain);
     }
 
     private ApplicationEntity toEntity(Application app) {
