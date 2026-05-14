@@ -1,6 +1,8 @@
 package com.chat_system.services.core.api.controller;
 
 import com.chat_system.services.core.config.JacksonConfig;
+import com.chat_system.services.core.domain.exception.DomainException;
+import com.chat_system.services.core.domain.exception.InvalidApplicationException;
 import com.chat_system.services.core.domain.model.Application;
 import com.chat_system.services.core.usecase.CreateApplicationUseCase;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +63,54 @@ public class ApplicationsControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"ab\"}"))
                 .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.message").isNotEmpty())
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void createApplication_domainExceptionFromUseCase_returns422() throws Exception {
+        when(createApplicationUseCase.execute("MyApp"))
+                .thenThrow(new InvalidApplicationException(InvalidApplicationException.NAME_TOO_LONG));
+
+        mockMvc.perform(post("/applications")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"MyApp\"}"))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.error.message").value(InvalidApplicationException.NAME_TOO_LONG))
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void createApplication_unmappedDomainException_returns500() throws Exception {
+        when(createApplicationUseCase.execute("MyApp"))
+                .thenThrow(new DomainException("some unmapped domain error") {});
+
+        mockMvc.perform(post("/applications")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"MyApp\"}"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error.message").isNotEmpty())
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void createApplication_unexpectedException_returns500() throws Exception {
+        when(createApplicationUseCase.execute("MyApp"))
+                .thenThrow(new RuntimeException("unexpected"));
+
+        mockMvc.perform(post("/applications")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"MyApp\"}"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error.message").isNotEmpty())
+                .andExpect(jsonPath("$.data").doesNotExist());
+    }
+
+    @Test
+    void createApplication_missingBody_returns400() throws Exception {
+        mockMvc.perform(post("/applications")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.message").isNotEmpty())
                 .andExpect(jsonPath("$.data").doesNotExist());
     }
