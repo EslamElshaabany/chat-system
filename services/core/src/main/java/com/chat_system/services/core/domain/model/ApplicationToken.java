@@ -15,15 +15,13 @@ public record ApplicationToken(UUID value) {
     }
 
     private static UUID validate(String tokenString) {
-        UUID token;
+        if (tokenString == null)
+            throw new InvalidApplicationTokenException("Token must not be null");
         try {
-            token = UUID.fromString(tokenString);
+            return UUID.fromString(tokenString);
         } catch (IllegalArgumentException e) {
             throw new InvalidApplicationTokenException(e.getMessage());
-        } catch (Exception e) {
-            throw new InvalidApplicationTokenException("Invalid Token: " + tokenString);
         }
-        return token;
     }
 
     public String string() {

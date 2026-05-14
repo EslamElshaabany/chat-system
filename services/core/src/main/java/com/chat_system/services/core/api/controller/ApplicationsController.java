@@ -6,15 +6,11 @@ import com.chat_system.services.core.domain.model.ApplicationToken;
 import com.chat_system.services.core.usecase.CreateApplicationUseCase;
 import com.chat_system.services.core.usecase.GetApplicationUseCase;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/applications")
-@Validated
 public class ApplicationsController {
 
     private final CreateApplicationUseCase createApplicationUseCase;
@@ -36,9 +32,8 @@ public class ApplicationsController {
     }
 
     @GetMapping("/{token}")
-    @ResponseStatus(HttpStatus.OK)
-    public ApplicationResponse get(@PathVariable @NotBlank @Size(min = 36, max = 36) String token) {
-        var app = getApplicationUseCase.execute(ApplicationToken.from(token.strip()));
+    public ApplicationResponse get(@PathVariable String token) {
+        var app = getApplicationUseCase.execute(ApplicationToken.from(token));
         return ApplicationResponse.from(app);
     }
 }
