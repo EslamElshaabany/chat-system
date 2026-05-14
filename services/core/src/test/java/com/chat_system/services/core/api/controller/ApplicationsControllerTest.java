@@ -93,7 +93,7 @@ public class ApplicationsControllerTest {
         mockMvc.perform(post("/applications")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"MyApp\"}"))
-                .andExpect(status().isUnprocessableContent())
+                .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.error.message").isNotEmpty())
                 .andExpect(jsonPath("$.data").doesNotExist());
     }

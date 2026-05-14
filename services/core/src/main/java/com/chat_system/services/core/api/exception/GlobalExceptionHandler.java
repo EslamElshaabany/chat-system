@@ -4,7 +4,6 @@ import com.chat_system.services.core.api.dto.ApiResponse;
 import com.chat_system.services.core.api.dto.ErrorResponse;
 import com.chat_system.services.core.api.dto.FieldError;
 import com.chat_system.services.core.domain.exception.DomainException;
-import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +29,6 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            ConstraintViolationException.class,
             HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class,
             MissingServletRequestParameterException.class
