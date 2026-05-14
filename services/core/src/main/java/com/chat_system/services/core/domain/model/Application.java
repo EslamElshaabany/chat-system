@@ -13,19 +13,10 @@ public record Application(
         Instant updatedAt
 ) {
     public static Application create(String name) {
-        if (name == null || name.isBlank())
-            throw new InvalidApplicationException(InvalidApplicationException.NAME_BLANK);
-        if (name.strip().length() < 3)
-            throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_SHORT);
-        if (name.strip().length() > 25)
-            throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_LONG);
-
-        name = name.strip();
-
         return new Application(
                 null,
                 ApplicationToken.generate(),
-                name,
+                validateName(name),
                 0,
                 Instant.now(),
                 Instant.now()
@@ -33,20 +24,23 @@ public record Application(
     }
 
     public Application update(String name) {
+        return new Application(
+                this.id,
+                this.token,
+                validateName(name),
+                this.chatsCount,
+                this.createdAt,
+                Instant.now()
+        );
+    }
+
+    private static String validateName(String name) {
         if (name == null || name.isBlank())
             throw new InvalidApplicationException(InvalidApplicationException.NAME_BLANK);
         if (name.strip().length() < 3)
             throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_SHORT);
         if (name.strip().length() > 25)
             throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_LONG);
-
-        return new Application(
-                this.id,
-                this.token,
-                name.strip(),
-                this.chatsCount,
-                this.createdAt,
-                Instant.now()
-        );
+        return name.strip();
     }
 }
