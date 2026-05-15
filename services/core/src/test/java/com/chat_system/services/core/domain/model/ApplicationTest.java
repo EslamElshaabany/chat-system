@@ -75,4 +75,80 @@ class ApplicationTest {
                 .isInstanceOf(InvalidApplicationException.class)
                 .hasMessage(InvalidApplicationException.NAME_TOO_LONG);
     }
+
+    @Test
+    void update_validName_returnsApplicationWithUpdatedName() {
+        var original = Application.create("OldName");
+
+        var updated = original.update("NewName");
+
+        assertThat(updated.name()).isEqualTo("NewName");
+        assertThat(updated.token()).isEqualTo(original.token());
+        assertThat(updated.id()).isEqualTo(original.id());
+        assertThat(updated.chatsCount()).isEqualTo(original.chatsCount());
+        assertThat(updated.createdAt()).isEqualTo(original.createdAt());
+    }
+
+    @Test
+    void update_nameWithSurroundingWhitespace_stripsIt() {
+        var original = Application.create("OldName");
+
+        var updated = original.update("  NewName  ");
+
+        assertThat(updated.name()).isEqualTo("NewName");
+    }
+
+    @Test
+    void update_nullName_throws() {
+        var original = Application.create("OldName");
+
+        assertThatThrownBy(() -> original.update(null))
+                .isInstanceOf(InvalidApplicationException.class)
+                .hasMessage(InvalidApplicationException.NAME_BLANK);
+    }
+
+    @Test
+    void update_blankName_throws() {
+        var original = Application.create("OldName");
+
+        assertThatThrownBy(() -> original.update("   "))
+                .isInstanceOf(InvalidApplicationException.class)
+                .hasMessage(InvalidApplicationException.NAME_BLANK);
+    }
+
+    @Test
+    void update_nameTooShort_throws() {
+        var original = Application.create("OldName");
+
+        assertThatThrownBy(() -> original.update("ab"))
+                .isInstanceOf(InvalidApplicationException.class)
+                .hasMessage(InvalidApplicationException.NAME_TOO_SHORT);
+    }
+
+    @Test
+    void update_nameAtMinLength_succeeds() {
+        var original = Application.create("OldName");
+
+        var updated = original.update("abc");
+
+        assertThat(updated.name()).isEqualTo("abc");
+    }
+
+    @Test
+    void update_nameAtMaxLength_succeeds() {
+        var original = Application.create("OldName");
+
+        var updated = original.update("a".repeat(25));
+
+        assertThat(updated.name()).isEqualTo("a".repeat(25));
+    }
+
+    @Test
+    void update_nameTooLong_throws() {
+        var original = Application.create("OldName");
+
+        assertThatThrownBy(() -> original.update("a".repeat(26)))
+                .isInstanceOf(InvalidApplicationException.class)
+                .hasMessage(InvalidApplicationException.NAME_TOO_LONG);
+    }
 }
