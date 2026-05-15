@@ -37,10 +37,11 @@ public record Application(
     private static String validateName(String name) {
         if (name == null || name.isBlank())
             throw new InvalidApplicationException(InvalidApplicationException.NAME_BLANK);
-        if (name.strip().length() < 3)
+        String stripped = name.strip();
+        if (stripped.length() < 3)
             throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_SHORT);
-        if (name.strip().length() > 25)
+        if (stripped.length() > 25)
             throw new InvalidApplicationException(InvalidApplicationException.NAME_TOO_LONG);
-        return name.strip();
+        return stripped;
     }
 }
