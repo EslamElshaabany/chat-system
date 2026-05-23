@@ -1,0 +1,137 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: SLO - Availability
+    folder: SLO
+    interval: 1m
+    rules:
+      - uid: slo-fast-burn
+        title: "SLO: Error Budget Fast Burn (>14x)"
+        condition: C
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error budget burning 14x faster than sustainable — breach imminent"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: |
+                sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[1h]))
+                / sum(rate(http_server_request_duration_seconds_count[1h]))
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 0.07"
+
+      - uid: slo-slow-burn
+        title: "SLO: Error Budget Slow Burn (>2x)"
+        condition: C
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error budget burning >2x faster than sustainable"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 21600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: |
+                sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~"5.."}[6h]))
+                / sum(rate(http_server_request_duration_seconds_count[6h]))
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 0.01"
+
+  - orgId: 1
+    name: SLO - Latency
+    folder: SLO
+    interval: 1m
+    rules:
+      - uid: slo-p95-latency
+        title: "SLO: P95 Latency > 500ms"
+        condition: C
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 request latency exceeds 500ms SLO target"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: |
+                histogram_quantile(0.95,
+                  sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le))
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 0.5"
+
+  - orgId: 1
+    name: Saturation
+    folder: SLO
+    interval: 1m
+    rules:
+      - uid: saturation-hikari
+        title: "DB Pool Saturation > 80%"
+        condition: C
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "HikariCP connection pool is >80% utilized"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: |
+                100 * hikaricp_connections_active{service_name="core"}
+                / hikaricp_connections_max{service_name="core"}
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 80"
