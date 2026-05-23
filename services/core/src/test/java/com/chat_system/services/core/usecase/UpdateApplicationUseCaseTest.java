@@ -5,6 +5,7 @@ import com.chat_system.services.core.domain.exception.InvalidApplicationExceptio
 import com.chat_system.services.core.domain.interfaces.repository.ApplicationRepository;
 import com.chat_system.services.core.domain.model.Application;
 import com.chat_system.services.core.domain.model.ApplicationToken;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,7 +32,7 @@ class UpdateApplicationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateApplicationUseCase(applicationRepository);
+        useCase = new UpdateApplicationUseCase(applicationRepository, new SimpleMeterRegistry());
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.chat_system.services.core.usecase;
 import com.chat_system.services.core.domain.exception.InvalidApplicationException;
 import com.chat_system.services.core.domain.interfaces.repository.ApplicationRepository;
 import com.chat_system.services.core.domain.model.Application;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +26,7 @@ class CreateApplicationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new CreateApplicationUseCase(applicationRepository);
+        useCase = new CreateApplicationUseCase(applicationRepository, new SimpleMeterRegistry());
     }
 
     @Test
