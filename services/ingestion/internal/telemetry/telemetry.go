@@ -1,4 +1,4 @@
-package main
+package telemetry
 
 import (
 	"context"
@@ -16,7 +16,11 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
 )
 
-func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
+// Setup wires the global OpenTelemetry SDK to ship traces and metrics over
+// OTLP/gRPC to the collector named by OTEL_COLLECTOR_HOST (defaulting to
+// "otel-collector"). The returned function flushes and shuts down the
+// providers and should be deferred by the caller.
+func Setup(ctx context.Context, serviceName, serviceVersion string) (func(context.Context) error, error) {
 	host := os.Getenv("OTEL_COLLECTOR_HOST")
 	if host == "" {
 		host = "otel-collector"
@@ -32,8 +36,8 @@ func setupOTelSDK(ctx context.Context) (func(context.Context) error, error) {
 
 	res, err := sdkresource.New(ctx,
 		sdkresource.WithAttributes(
-			semconv.ServiceName("ingestion"),
-			semconv.ServiceVersion("0.0.1"),
+			semconv.ServiceName(serviceName),
+			semconv.ServiceVersion(serviceVersion),
 		),
 	)
 	if err != nil {

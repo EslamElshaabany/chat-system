@@ -42,7 +42,7 @@ core:
 	cd services/core && . ./.env && ./gradlew bootRun
 
 ingestion:
-	cd services/ingestion && . ./.env && go run ./cmd/api/main.go
+	cd services/ingestion && . ./.env && go run ./cmd/api
 
 # ── Development ─────────────────────────────────────────────────────
 

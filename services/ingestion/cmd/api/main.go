@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
+	"github.com/eslamelshaabany/chat-system/services/ingestion/internal/telemetry"
 )
 
 type healthResponse struct {
@@ -19,8 +21,10 @@ type healthResponse struct {
 }
 
 func main() {
-	ctx := context.Background()
-	shutdownOTel, err := setupOTelSDK(ctx)
+	ctx, cancelOTel := context.WithCancel(context.Background())
+	defer cancelOTel()
+
+	shutdownOTel, err := telemetry.Setup(ctx, "ingestion", "0.0.1")
 	if err != nil {
 		log.Fatalf("OTel setup failed: %v", err)
 	}
