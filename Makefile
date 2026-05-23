@@ -39,19 +39,19 @@ obs-logs:
 
 # ── Services ─────────────────────────────────────────────────────────
 core:
-	cd services/core && . ./.env && ./gradlew bootRun
+	cd services/core && set -a && . ./.env && set +a && ./gradlew bootRun
 
 ingestion:
-	cd services/ingestion && . ./.env && go run ./cmd/api
+	cd services/ingestion && set -a && . ./.env && set +a && go run ./cmd/api
 
 # ── Development ─────────────────────────────────────────────────────
 
 dev: infra
 	@echo "🚀 Starting services..."
 	@trap 'kill 0' SIGINT; \
-	(cd services/core && . ./.env && ./gradlew bootRun) & \
-	(cd services/core && . ./.env && ./gradlew -t compileJava) & \
-	(cd services/ingestion && . ./.env && air) & \
+	(cd services/core && set -a && . ./.env && set +a && ./gradlew bootRun) & \
+	(cd services/core && set -a && . ./.env && set +a && ./gradlew -t compileJava) & \
+	(cd services/ingestion && set -a && . ./.env && set +a && air) & \
 	wait
 
 # ── Help ─────────────────────────────────────────────────────────────

@@ -2,7 +2,7 @@
   "annotations": { "list": [] },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 0,
+  "graphTooltip": 1,
   "id": null,
   "links": [],
   "liveNow": false,
@@ -17,7 +17,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Traffic (requests/sec)",
+      "title": "Traffic — requests / sec",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
       "id": 1,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -25,8 +25,14 @@
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
       "targets": [
         {
-          "refId": "A",
-          "expr": "sum(rate(http_server_request_duration_seconds_count[5m])) by (service_name)",
+          "refId": "ingestion",
+          "expr": "sum(rate(chat_http_server_duration_milliseconds_count[5m])) by (service_name)",
+          "legendFormat": "{{service_name}}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        },
+        {
+          "refId": "core",
+          "expr": "sum(rate(chat_http_server_requests_milliseconds_count[5m])) by (service_name)",
           "legendFormat": "{{service_name}}",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
@@ -34,7 +40,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Error rate (%)",
+      "title": "Error rate %",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
       "id": 2,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -55,8 +61,14 @@
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
       "targets": [
         {
-          "refId": "A",
-          "expr": "100 * sum(rate(http_server_request_duration_seconds_count{http_response_status_code=~\"5..\"}[5m])) by (service_name) / sum(rate(http_server_request_duration_seconds_count[5m])) by (service_name)",
+          "refId": "ingestion",
+          "expr": "100 * sum(rate(chat_http_server_duration_milliseconds_count{http_status_code=~\"5..\"}[5m])) by (service_name) / sum(rate(chat_http_server_duration_milliseconds_count[5m])) by (service_name)",
+          "legendFormat": "{{service_name}}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        },
+        {
+          "refId": "core",
+          "expr": "100 * sum(rate(chat_http_server_requests_milliseconds_count{outcome=~\"SERVER_ERROR|CLIENT_ERROR\"}[5m])) by (service_name) / sum(rate(chat_http_server_requests_milliseconds_count[5m])) by (service_name)",
           "legendFormat": "{{service_name}}",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
@@ -72,8 +84,14 @@
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
       "targets": [
         {
-          "refId": "A",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le, service_name))",
+          "refId": "ingestion",
+          "expr": "histogram_quantile(0.95, sum(rate(chat_http_server_duration_milliseconds_bucket[5m])) by (le, service_name)) / 1000",
+          "legendFormat": "{{service_name}}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        },
+        {
+          "refId": "core",
+          "expr": "histogram_quantile(0.95, sum(rate(chat_http_server_requests_milliseconds_bucket[5m])) by (le, service_name)) / 1000",
           "legendFormat": "{{service_name}}",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
@@ -89,8 +107,14 @@
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
       "targets": [
         {
-          "refId": "A",
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_request_duration_seconds_bucket[5m])) by (le, service_name))",
+          "refId": "ingestion",
+          "expr": "histogram_quantile(0.99, sum(rate(chat_http_server_duration_milliseconds_bucket[5m])) by (le, service_name)) / 1000",
+          "legendFormat": "{{service_name}}",
+          "datasource": { "type": "prometheus", "uid": "prometheus" }
+        },
+        {
+          "refId": "core",
+          "expr": "histogram_quantile(0.99, sum(rate(chat_http_server_requests_milliseconds_bucket[5m])) by (le, service_name)) / 1000",
           "legendFormat": "{{service_name}}",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
@@ -106,7 +130,7 @@
     },
     {
       "type": "gauge",
-      "title": "HikariCP Pool Utilization (%)",
+      "title": "HikariCP Pool Utilization %",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 18 },
       "id": 5,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -130,23 +154,24 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * hikaricp_connections_active{service_name=\"core\"} / hikaricp_connections_max{service_name=\"core\"}",
+          "expr": "100 * chat_hikaricp_connections_active / chat_hikaricp_connections_max",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
       ]
     },
     {
-      "type": "stat",
-      "title": "JVM Heap Used (%)",
+      "type": "timeseries",
+      "title": "JVM Heap Used %",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 18 },
       "id": 6,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
-      "options": { "graphMode": "area", "colorMode": "value" },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * sum(jvm_memory_used_bytes{area=\"heap\",service_name=\"core\"}) / sum(jvm_memory_max_bytes{area=\"heap\",service_name=\"core\"})",
+          "expr": "100 * sum(chat_jvm_memory_used_bytes{area=\"heap\"}) by (service_name) / sum(chat_jvm_memory_max_bytes{area=\"heap\"}) by (service_name)",
+          "legendFormat": "{{service_name}}",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
       ]
@@ -161,7 +186,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Applications created /sec",
+      "title": "Applications created / sec",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 27 },
       "id": 7,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -170,7 +195,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(chat_applications_created_total[5m]))",
+          "expr": "sum(rate(chat_chat_applications_created_total[5m]))",
           "legendFormat": "created/s",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
@@ -178,7 +203,7 @@
     },
     {
       "type": "timeseries",
-      "title": "Applications updated /sec",
+      "title": "Applications updated / sec",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 27 },
       "id": 8,
       "datasource": { "type": "prometheus", "uid": "prometheus" },
@@ -187,7 +212,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(rate(chat_applications_updated_total[5m]))",
+          "expr": "sum(rate(chat_chat_applications_updated_total[5m]))",
           "legendFormat": "updated/s",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
@@ -203,6 +228,6 @@
   "timezone": "",
   "title": "Chat System — Golden Signals",
   "uid": "chat-golden-signals",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
