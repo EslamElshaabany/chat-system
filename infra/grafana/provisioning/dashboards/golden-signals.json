@@ -154,7 +154,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "100 * max_over_time(chat_hikaricp_connections_active{service_name=\"core\"}[5m]) / max(chat_hikaricp_connections_max{service_name=\"core\"})",
+          "expr": "100 * max(max_over_time(chat_hikaricp_connections_active{service_name=\"core\"}[5m])) / max(chat_hikaricp_connections_max{service_name=\"core\"})",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
       ]
