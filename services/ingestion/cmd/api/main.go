@@ -9,6 +9,10 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
+	"github.com/eslamelshaabany/chat-system/services/ingestion/internal/telemetry"
 )
 
 type healthResponse struct {
@@ -17,18 +21,37 @@ type healthResponse struct {
 }
 
 func main() {
+	ctx, cancelOTel := context.WithCancel(context.Background())
+	defer cancelOTel()
+
+	shutdownOTel, err := telemetry.Setup(ctx, "ingestion", "0.0.1")
+	if err != nil {
+		log.Fatalf("OTel setup failed: %v", err)
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = shutdownOTel(shutdownCtx)
+	}()
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", livenessHandler)
 	mux.HandleFunc("GET /readyz", readinessHandler)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8090"
+	}
+	addr := ":" + port
+
 	srv := &http.Server{
-		Addr:    ":8081",
-		Handler: mux,
+		Addr:    addr,
+		Handler: otelhttp.NewHandler(mux, "ingestion-server"),
 	}
 
 	// start server in background
 	go func() {
-		log.Println("starting server on :8081")
+		log.Printf("starting server on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}

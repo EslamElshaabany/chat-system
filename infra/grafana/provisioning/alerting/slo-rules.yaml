@@ -1,0 +1,218 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: SLO - Availability
+    folder: SLO
+    interval: 1m
+    rules:
+      - uid: slo-fast-burn
+        title: "SLO: Error Budget Fast Burn (>14x)"
+        condition: C
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Error budget burning 14x faster than sustainable — breach imminent"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 3600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: "((sum(rate(chat_http_server_duration_milliseconds_count{http_status_code=~\"5..\"}[1h])) or vector(0)) + (sum(rate(chat_http_server_requests_milliseconds_count{outcome=\"SERVER_ERROR\"}[1h])) or vector(0))) / ((sum(rate(chat_http_server_duration_milliseconds_count[1h])) + sum(rate(chat_http_server_requests_milliseconds_count[1h]))) or vector(1))"
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 0.07"
+
+      - uid: slo-slow-burn
+        title: "SLO: Error Budget Slow Burn (>2x)"
+        condition: C
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Error budget burning >2x faster than sustainable"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 21600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: "((sum(rate(chat_http_server_duration_milliseconds_count{http_status_code=~\"5..\"}[6h])) or vector(0)) + (sum(rate(chat_http_server_requests_milliseconds_count{outcome=\"SERVER_ERROR\"}[6h])) or vector(0))) / ((sum(rate(chat_http_server_duration_milliseconds_count[6h])) + sum(rate(chat_http_server_requests_milliseconds_count[6h]))) or vector(1))"
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 0.01"
+
+  - orgId: 1
+    name: SLO - Latency
+    folder: SLO
+    interval: 1m
+    rules:
+      - uid: slo-p95-latency-core
+        title: "SLO: core-service P95 Latency > 500ms"
+        condition: C
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "core-service P95 request latency exceeds 500ms SLO target"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: "histogram_quantile(0.95, sum(rate(chat_http_server_requests_milliseconds_bucket{service_name=\"core\"}[5m])) by (le)) / 1000"
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 0.5"
+
+      - uid: slo-p95-latency-ingestion
+        title: "SLO: ingestion-service P95 Latency > 500ms"
+        condition: C
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ingestion-service P95 request latency exceeds 500ms SLO target"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: "histogram_quantile(0.95, sum(rate(chat_http_server_duration_milliseconds_bucket{service_name=\"ingestion\"}[5m])) by (le)) / 1000"
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 0.5"
+
+  - orgId: 1
+    name: Saturation
+    folder: SLO
+    interval: 1m
+    rules:
+      - uid: saturation-hikari
+        title: "core-service DB Pool Saturation > 80%"
+        condition: C
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "core-service HikariCP connection pool peaked above 80% in the last 5m (ingestion has no JDBC pool)"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: "100 * max(max_over_time(chat_hikaricp_connections_active{service_name=\"core\"}[5m])) / max(chat_hikaricp_connections_max{service_name=\"core\"})"
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A > 80"
+
+  - orgId: 1
+    name: Uptime
+    folder: SLO
+    interval: 1m
+    rules:
+      - uid: service-down-core
+        title: "core-service is down"
+        condition: C
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "core-service has not reported metrics in the last 2m"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: "absent_over_time(chat_jvm_memory_used_bytes{service_name=\"core\"}[2m])"
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A == 1"
+
+      - uid: service-down-ingestion
+        title: "ingestion-service is down"
+        condition: C
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ingestion-service has not reported metrics in the last 2m"
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 120
+              to: 0
+            datasourceUid: prometheus
+            model:
+              refId: A
+              expr: "absent_over_time(chat_process_runtime_go_mem_heap_alloc_bytes{service_name=\"ingestion\"}[2m])"
+              instant: true
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: math
+              refId: C
+              expression: "$A == 1"
