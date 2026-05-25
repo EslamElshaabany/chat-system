@@ -26,7 +26,7 @@ infra-status:
 # ── Observability (LGTM + OTel) ─────────────────────────────────────
 obs:
 	docker compose up -d $(OBS_SERVICES)
-	@echo "✅ Observability stack is up — Grafana at http://localhost:3001"
+	@echo "✅ Observability stack is up — Grafana at http://localhost:3000"
 
 obs-down:
 	docker compose stop $(OBS_SERVICES)
@@ -63,7 +63,7 @@ help:
 	@echo "  make infra-logs         Tail infra container logs"
 	@echo "  make infra-status       Show container health"
 	@echo ""
-	@echo "  make obs                Start LGTM observability stack (Grafana :3001)"
+	@echo "  make obs                Start LGTM observability stack (Grafana :3000)"
 	@echo "  make obs-down           Stop observability stack"
 	@echo "  make obs-status         Show observability container status"
 	@echo "  make obs-logs           Tail observability container logs"
