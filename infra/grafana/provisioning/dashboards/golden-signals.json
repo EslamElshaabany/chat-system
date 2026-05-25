@@ -56,20 +56,29 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "5xx (server errors)" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }]
+          },
+          {
+            "matcher": { "id": "byName", "options": "4xx (client errors)" },
+            "properties": [{ "id": "color", "value": { "mode": "fixed", "fixedColor": "yellow" } }]
+          }
+        ]
       },
       "options": { "legend": { "displayMode": "list", "placement": "bottom", "showLegend": true } },
       "targets": [
         {
-          "refId": "ingestion",
-          "expr": "100 * sum(rate(chat_http_server_duration_milliseconds_count{http_status_code=~\"5..\"}[5m])) by (service_name) / sum(rate(chat_http_server_duration_milliseconds_count[5m])) by (service_name)",
-          "legendFormat": "{{service_name}}",
+          "refId": "5xx",
+          "expr": "100 * (((sum(rate(chat_http_server_duration_milliseconds_count{http_status_code=~\"5..\"}[5m])) or vector(0)) + (sum(rate(chat_http_server_requests_milliseconds_count{outcome=\"SERVER_ERROR\"}[5m])) or vector(0))) / ((sum(rate(chat_http_server_duration_milliseconds_count[5m])) + sum(rate(chat_http_server_requests_milliseconds_count[5m]))) or vector(1)))",
+          "legendFormat": "5xx (server errors)",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         },
         {
-          "refId": "core",
-          "expr": "100 * sum(rate(chat_http_server_requests_milliseconds_count{outcome=~\"SERVER_ERROR|CLIENT_ERROR\"}[5m])) by (service_name) / sum(rate(chat_http_server_requests_milliseconds_count[5m])) by (service_name)",
-          "legendFormat": "{{service_name}}",
+          "refId": "4xx",
+          "expr": "100 * (((sum(rate(chat_http_server_duration_milliseconds_count{http_status_code=~\"4..\"}[5m])) or vector(0)) + (sum(rate(chat_http_server_requests_milliseconds_count{outcome=\"CLIENT_ERROR\"}[5m])) or vector(0))) / ((sum(rate(chat_http_server_duration_milliseconds_count[5m])) + sum(rate(chat_http_server_requests_milliseconds_count[5m]))) or vector(1)))",
+          "legendFormat": "4xx (client errors)",
           "datasource": { "type": "prometheus", "uid": "prometheus" }
         }
       ]
