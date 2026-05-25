@@ -38,14 +38,20 @@ func main() {
 	mux.HandleFunc("GET /healthz", livenessHandler)
 	mux.HandleFunc("GET /readyz", readinessHandler)
 
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8090"
+	}
+	addr := ":" + port
+
 	srv := &http.Server{
-		Addr:    ":8081",
+		Addr:    addr,
 		Handler: otelhttp.NewHandler(mux, "ingestion-server"),
 	}
 
 	// start server in background
 	go func() {
-		log.Println("starting server on :8081")
+		log.Printf("starting server on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("server error: %v", err)
 		}
